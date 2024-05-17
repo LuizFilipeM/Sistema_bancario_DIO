@@ -1,1 +1,2 @@
-# Projeto de um sistema bancário reduzido e simplificado para praticar os conceitos de python vistos até o momento.
+# Projeto de um sistema bancário reduzido e simplificado
+### O objetivo deste projeto é praticar os conceitos básicos de python vistos até o momento.
