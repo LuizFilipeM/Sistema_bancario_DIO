@@ -53,15 +53,18 @@ while(True):
             saldo += valor
             extrato += f"Depósito realizado no valor de R$ {valor:.2f}\n"
 
+    #EXTRATO
     if opcao == 2:
-        print(extrato)
-        print(f"Saldo: {saldo}")
+        if extrato == "":
+            print("Não há movimentações até o momento.")
+        else:
+            print("#####EXTRATO#####\n")
+            print(extrato)
+            print(f"Saldo: {saldo}")
 
-
-    opcao = int(input(menu))
+    #SAIR
     if opcao == 3:
         print("OBRIGADO POR USAR NOSSO SISTEMA!\n")
         break
     
-print(extrato)    
-    
+    opcao = int(input(menu))
