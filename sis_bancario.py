@@ -8,6 +8,12 @@ class Conta:
         self.cliente = cliente
         self.historico = Historico()
 
+    @property
+    def get_saldo(self):
+        return self.saldo
+
+
+
     @classmethod
     def nova_conta(cls, cliente, numero):
         return cls(cliente, numero)
@@ -205,10 +211,14 @@ def exibir_extrato(clientes):
         extrato = "Não foram realizadas movimentações."
     else:
         for transacao in transacoes:
-            extrato += f"\n{transacao['tipo']}:\n\tR$ {transacao['valor']:.2f}"
+            if transacao["tipo"] == "Deposito":
+                extrato += f"\n{transacao['tipo']}:\tR$ {transacao['valor']:.2f}"
+            if transacao["tipo"] == "Saque":
+                extrato += f"\n{transacao['tipo']}:\t\tR$ {transacao['valor']:.2f}"
 
     print(extrato)
-    print(f"\nSaldo:\n\tR$ {conta.saldo:.2f}")
+    print("------------------------------------------")
+    print(f"\nSaldo:\t\tR$ {conta.saldo:.2f}")
     print("==========================================")
 
 def criar_cliente(clientes):
