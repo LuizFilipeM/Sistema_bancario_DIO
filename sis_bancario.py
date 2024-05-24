@@ -8,22 +8,6 @@ class Conta:
         self.cliente = cliente
         self.historico = Historico()
 
-    """@property
-    def snumero(self):
-        return self.numero
-    
-    @property
-    def agencia(self):
-        return self.agencia
-    
-    @property
-    def cliente(self):
-        return self.cliente
-    
-    @property
-    def historico(self):
-        return self.historico"""
-    
     @classmethod
     def nova_conta(cls, cliente, numero):
         return cls(cliente, numero)
@@ -56,7 +40,6 @@ class Conta:
         else:
             print("---------- Operação falhou: Valor inválido ----------")
             return False
-        
         
 class Conta_corrente(Conta):
     def __init__(self, numero, cliente, limite_valor = 500, limite_saque = 3):
@@ -96,10 +79,6 @@ class Transacao(ABC):
     def registrar(self, conta):
         pass
 
-    """@property
-    def valor(self):
-        pass"""
-
 class Saque(Transacao):
     def __init__(self, valor):
         self.valor = float(valor)
@@ -119,10 +98,6 @@ class Deposito(Transacao):
 class Historico:
     def __init__(self):
         self.transacoes = []
-
-    """@property
-    def transacoes(self):
-        return self.transacoes"""
 
     def adicionar_transacao(self, transacao):
         self.transacoes.append(
@@ -308,7 +283,3 @@ def main():
 
 
 main()
-"""
-p1 = PessoaFisica(nome="Luiz", data_nascimento="13", cpf=123, endereco="endereco")
-clientes = [p1]
-print(filtrar_cliente(123,clientes).cpf)"""
