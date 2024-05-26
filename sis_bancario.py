@@ -29,6 +29,10 @@ class Conta:
         if execedeu_saldo:
             print("---------- Operação falhou: Saldo insuficiente para saque ----------")
         
+        elif not self.historico.transacoes_dia():
+            print("---------- Operação falhou: limite de transacções diárias ----------")
+            return False
+
         elif valor_saque > 0:
             self.saldo -= valor_saque
             return True
@@ -37,17 +41,21 @@ class Conta:
             print("---------- Operação falhou: valor inválido ----------")
         return False
         
-
     def depositar(self, valor_deposito):
+        if not self.historico.transacoes_dia():
+            print("---------- Operação falhou: limite de transacções diárias ----------")
+            return False
+        
         if valor_deposito > 0:
             self.saldo += valor_deposito
             return True
+        
         else:
             print("---------- Operação falhou: Valor inválido ----------")
             return False
         
 class Conta_corrente(Conta):
-    def __init__(self, numero, cliente, limite_valor = 500, limite_saque = 3):
+    def __init__(self, numero, cliente, limite_valor = 500, limite_saque = 5):
         super().__init__(numero, cliente)
         self.limite = limite_valor
         self.limite_saque = limite_saque
@@ -112,6 +120,12 @@ class Historico:
                 "data": transacao.data
             }
         )
+
+    def transacoes_dia(self):
+        qtd_transacoes = len([movimentacao for movimentacao in self.transacoes if movimentacao["data"][:2] == datetime.now().strftime("%d")])
+        print(self.transacoes)
+        print(f"Numero de trasnacoes: {qtd_transacoes}")
+        return qtd_transacoes <= 10
 
 class Cliente:
     def __init__(self, endereco):
@@ -184,24 +198,25 @@ def recuperar_conta_cliente(cliente):
     return cliente.list[0]
 
 @log_transacao
-def Depositar(clientes):
+def Depositar(clientes, data_atual):
     cpf = int(input("Digite o CPF: "))
     cliente = filtrar_cliente(cpf, clientes)
-
     if not cliente:
         print("Erro: cliente não encontrado")
+        return 0
         
     else:
         valor = float(input("Digite o valor: "))
         transacao = Deposito(valor)
-        conta = recuperar_conta_cliente(cliente)
-
-        if not conta: 
+        conta_corrente = recuperar_conta_cliente(cliente)
+            
+        if not conta_corrente: 
             return 0
-        return cliente.realizar_transacao(conta, transacao)
+
+        return cliente.realizar_transacao(conta_corrente, transacao)
 
 @log_transacao
-def sacar(clientes):
+def sacar(clientes, data_atual):
     cpf = int(input("Informe o CPF do cliente: "))
     cliente = filtrar_cliente(cpf, clientes)
 
@@ -212,11 +227,12 @@ def sacar(clientes):
     valor = float(input("Informe o valor do saque: "))
     transacao = Saque(valor)
 
-    conta = recuperar_conta_cliente(cliente)
-    if not conta:
+    conta_corrente = recuperar_conta_cliente(cliente)
+
+    if not conta_corrente:
         return 0
 
-    if cliente.realizar_transacao(conta, transacao) == False: return 0
+    if cliente.realizar_transacao(conta_corrente, transacao) == False: return 0
 
 @log_transacao
 def exibir_extrato(clientes):
@@ -270,7 +286,7 @@ def criar_cliente(clientes):
     clientes.append(cliente)
 
 @log_transacao
-def criar_conta(numero_conta, clientes, contas):
+def criar_conta(numero_conta, clientes, contas_corrente):
     cpf = int(input("Informe o CPF do cliente: "))
     cliente = filtrar_cliente(cpf, clientes)
 
@@ -279,11 +295,11 @@ def criar_conta(numero_conta, clientes, contas):
         return 0
 
     conta = Conta_corrente.nova_conta(cliente, numero_conta)
-    contas.append(conta)
+    contas_corrente.append(conta)
     cliente.adicionar_conta(conta)
 
-def listar_contas(contas):
-    for conta in ContaIterador(contas):
+def listar_contas(contas_corrente):
+    for conta in ContaIterador(contas_corrente):
         print (conta)
         print("_" * 50)
     
@@ -301,17 +317,18 @@ def listar_transacoes(cliente, op = 0):
         print(f"\n{i['data']}: {i['tipo']}:\tR$ {i['valor']:.2f}")
 
 def main():
+    data_atual = datetime.now().strftime("%d")
     clientes = []
-    contas = []
+    contas_corrente = []
 
     while True:
         opcao = menu()
 
         if opcao == "d":
-            Depositar(clientes)
+            Depositar(clientes, data_atual)
 
         elif opcao == "s":
-            sacar(clientes)
+            sacar(clientes, data_atual)
 
         elif opcao == "e":
             exibir_extrato(clientes)
@@ -320,11 +337,11 @@ def main():
             criar_cliente(clientes)
 
         elif opcao == "nc":
-            numero_conta = len(contas) + 1
-            criar_conta(numero_conta, clientes, contas)
+            numero_conta = len(contas_corrente) + 1
+            criar_conta(numero_conta, clientes, contas_corrente)
 
         elif opcao == "lc":
-            listar_contas(contas)
+            listar_contas(contas_corrente)
         
         elif opcao == "lt":
             op = input("""
