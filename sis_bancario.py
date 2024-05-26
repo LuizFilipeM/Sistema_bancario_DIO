@@ -2,6 +2,7 @@ from abc import ABC, abstractclassmethod
 import os
 from datetime import datetime
 import pytz
+import csv
 
 class Conta:
     def __init__(self,cliente, numero):
@@ -123,18 +124,17 @@ class Historico:
 
     def transacoes_dia(self):
         qtd_transacoes = len([movimentacao for movimentacao in self.transacoes if movimentacao["data"][:2] == datetime.now().strftime("%d")])
-        print(self.transacoes)
-        print(f"Numero de trasnacoes: {qtd_transacoes}")
         return qtd_transacoes <= 10
 
 class Cliente:
-    def __init__(self, endereco):
+    def __init__(self,endereco):
         self.endereco = endereco
         self.list = []
 
     def realizar_transacao(self, conta, transacao):
         if transacao.registrar(conta) == False:
             return 0
+        else: return transacao
 
     def adicionar_conta(self, conta):
         self.list.append(conta)
@@ -165,8 +165,11 @@ class ContaIterador:
     
 def log_transacao(func):
     def envelope(*args, **kwargs):
-        if func(*args, **kwargs) == 0: return
-        print(f'\nOperação realizada com sucesso: {func.__name__}')
+        retorno = func(*args, **kwargs)
+        if  retorno == 0: return
+        with open("log_transacoes.csv", "a", encoding = "UTF-8") as arquivo:
+            escritor = csv.writer(arquivo)
+            escritor.writerow([f"Data e Hora: {retorno.data}\t Função: {func.__name__}\tValor da função: {retorno.valor}"])
         return func    
     return envelope
 
@@ -198,7 +201,7 @@ def recuperar_conta_cliente(cliente):
     return cliente.list[0]
 
 @log_transacao
-def Depositar(clientes, data_atual):
+def Depositar(clientes):
     cpf = int(input("Digite o CPF: "))
     cliente = filtrar_cliente(cpf, clientes)
     if not cliente:
@@ -213,10 +216,12 @@ def Depositar(clientes, data_atual):
         if not conta_corrente: 
             return 0
 
-        return cliente.realizar_transacao(conta_corrente, transacao)
+        if cliente.realizar_transacao(conta_corrente, transacao) == 0:
+            return 0
+        return transacao
 
 @log_transacao
-def sacar(clientes, data_atual):
+def sacar(clientes):
     cpf = int(input("Informe o CPF do cliente: "))
     cliente = filtrar_cliente(cpf, clientes)
 
@@ -233,8 +238,8 @@ def sacar(clientes, data_atual):
         return 0
 
     if cliente.realizar_transacao(conta_corrente, transacao) == False: return 0
+    return transacao
 
-@log_transacao
 def exibir_extrato(clientes):
     cpf = int(input("Informe o CPF do cliente: "))
 
@@ -268,7 +273,6 @@ def exibir_extrato(clientes):
     print(f"\nSaldo:\t\tR$ {conta.saldo:.2f}")
     print("==========================================")
 
-@log_transacao
 def criar_cliente(clientes):
     cpf = int(input("Informe o CPF (somente número): "))
     cliente = filtrar_cliente(cpf, clientes)
@@ -285,7 +289,6 @@ def criar_cliente(clientes):
 
     clientes.append(cliente)
 
-@log_transacao
 def criar_conta(numero_conta, clientes, contas_corrente):
     cpf = int(input("Informe o CPF do cliente: "))
     cliente = filtrar_cliente(cpf, clientes)
@@ -317,7 +320,7 @@ def listar_transacoes(cliente, op = 0):
         print(f"\n{i['data']}: {i['tipo']}:\tR$ {i['valor']:.2f}")
 
 def main():
-    data_atual = datetime.now().strftime("%d")
+    
     clientes = []
     contas_corrente = []
 
@@ -325,10 +328,10 @@ def main():
         opcao = menu()
 
         if opcao == "d":
-            Depositar(clientes, data_atual)
+            Depositar(clientes)
 
         elif opcao == "s":
-            sacar(clientes, data_atual)
+            sacar(clientes)
 
         elif opcao == "e":
             exibir_extrato(clientes)
@@ -359,5 +362,5 @@ def main():
 
         else:
             print("\nErro: Operação inválida, por favor selecione novamente a operação desejada.")
-        
+ 
 main()
