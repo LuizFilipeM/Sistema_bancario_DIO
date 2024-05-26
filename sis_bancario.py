@@ -1,5 +1,7 @@
 from abc import ABC, abstractclassmethod
 import os
+from datetime import datetime
+import pytz
 
 class Conta:
     def __init__(self,cliente, numero):
@@ -54,13 +56,9 @@ class Conta_corrente(Conta):
         qtd_saque = len(
             [transacao for transacao in self.historico.transacoes if transacao["tipo"] == Saque.__name__]
         )
-        valor_sacado = 0
-        for transacao in self.historico.transacoes:
-            if transacao["tipo"] == Saque.__name__:
-                valor_sacado += transacao["valor"]
-
-        excedeu_limite_saque = qtd_saque > self.limite_saque
-        excedeu_valor = valor_sacado > self.limite
+        
+        excedeu_limite_saque = qtd_saque >= self.limite_saque
+        excedeu_valor = valor_saque > self.limite
         
         if excedeu_valor:
             print("\n--- Operação falhou! O valor do saque excede o limite. ---")
@@ -82,18 +80,25 @@ class Transacao(ABC):
 class Saque(Transacao):
     def __init__(self, valor):
         self.valor = float(valor)
-    
+        data1 = datetime.now(pytz.timezone("America/Sao_Paulo"))
+        self.data = data1.strftime("%d/%m/%Y %H:%M:%S")
+
     def registrar(self, conta):
         if conta.sacar(self.valor):
             conta.historico.adicionar_transacao(self)
+        else:
+            return False
 
 class Deposito(Transacao):
     def __init__(self, valor):
         self.valor = float(valor)
-
+        data1 = datetime.now(pytz.timezone("America/Sao_Paulo"))
+        self.data = data1.strftime("%d/%m/%Y %H:%M:%S")
+        
     def registrar(self, conta):
         if conta.depositar(self.valor):
             conta.historico.adicionar_transacao(self)
+        else: return False
 
 class Historico:
     def __init__(self):
@@ -103,7 +108,8 @@ class Historico:
         self.transacoes.append(
             {
                 "tipo":transacao.__class__.__name__,
-                "valor":transacao.valor
+                "valor":transacao.valor,
+                "data": transacao.data
             }
         )
 
@@ -113,7 +119,8 @@ class Cliente:
         self.list = []
 
     def realizar_transacao(self, conta, transacao):
-        transacao.registrar(conta)
+        if transacao.registrar(conta) == False:
+            return 0
 
     def adicionar_conta(self, conta):
         self.list.append(conta)
@@ -144,7 +151,7 @@ class ContaIterador:
     
 def log_transacao(func):
     def envelope(*args, **kwargs):
-        if func(*args, **kwargs) == None: return
+        if func(*args, **kwargs) == 0: return
         print(f'\nOperação realizada com sucesso: {func.__name__}')
         return func    
     return envelope
@@ -190,8 +197,8 @@ def Depositar(clientes):
         conta = recuperar_conta_cliente(cliente)
 
         if not conta: 
-            return
-        cliente.realizar_transacao(conta, transacao)
+            return 0
+        return cliente.realizar_transacao(conta, transacao)
 
 @log_transacao
 def sacar(clientes):
@@ -200,16 +207,16 @@ def sacar(clientes):
 
     if not cliente:
         print("\nErro: Cliente não encontrado!")
-        return None
+        return 0
 
     valor = float(input("Informe o valor do saque: "))
     transacao = Saque(valor)
 
     conta = recuperar_conta_cliente(cliente)
     if not conta:
-        return None
+        return 0
 
-    cliente.realizar_transacao(conta, transacao)
+    if cliente.realizar_transacao(conta, transacao) == False: return 0
 
 @log_transacao
 def exibir_extrato(clientes):
@@ -219,11 +226,11 @@ def exibir_extrato(clientes):
     
     if not cliente:
         print("\nErro: Cliente não encontrado!")
-        return
+        return 0
 
     conta = recuperar_conta_cliente(clientes[0])
     if not conta:
-        return
+        return 0
 
     print("\n================ EXTRATO ================")
     transacoes = conta.historico.transacoes
@@ -232,11 +239,13 @@ def exibir_extrato(clientes):
     if not transacoes:
         extrato = "Não foram realizadas movimentações."
     else:
+        #AS ESTRUTURAS CONDICIONAIS ESTÃO SENDO UTILIZADAS APENAS PARA FORMATAR A IMPRESSÃO
+        #DO EXTRATO, MANTENDO OS VALORES NA MESMA COLUNA
         for transacao in transacoes:
             if transacao["tipo"] == "Deposito":
-                extrato += f"\n{transacao['tipo']}:\tR$ {transacao['valor']:.2f}"
+                extrato += f"\n{transacao['data']}: {transacao['tipo']}:\tR$ {transacao['valor']:.2f}"
             if transacao["tipo"] == "Saque":
-                extrato += f"\n{transacao['tipo']}:\t\tR$ {transacao['valor']:.2f}"
+                extrato += f"\n{transacao['data']}: {transacao['tipo']}:\t\tR$ {transacao['valor']:.2f}"
 
     print(extrato)
     print("------------------------------------------")
@@ -250,7 +259,7 @@ def criar_cliente(clientes):
 
     if cliente:
         print("\nErro: Já existe cliente com esse CPF!")
-        return
+        return 0
 
     nome = input("Informe o nome completo: ")
     data_nascimento = input("Informe a data de nascimento (dd-mm-aaaa): ")
@@ -267,7 +276,7 @@ def criar_conta(numero_conta, clientes, contas):
 
     if not cliente:
         print("\nErro: Cliente não encontrado, fluxo de criação de conta encerrado!")
-        return
+        return 0
 
     conta = Conta_corrente.nova_conta(cliente, numero_conta)
     contas.append(conta)
@@ -287,15 +296,13 @@ def gerador_transacoes(cliente, op):
         elif i["tipo"] == op:
             yield i
         
-
 def listar_transacoes(cliente, op = 0):
     for i in gerador_transacoes(cliente, op):
-        print(i)
+        print(f"\n{i['data']}: {i['tipo']}:\tR$ {i['valor']:.2f}")
 
 def main():
     clientes = []
     contas = []
-    cont = 1
 
     while True:
         opcao = menu()
