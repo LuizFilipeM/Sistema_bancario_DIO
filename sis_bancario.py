@@ -1,6 +1,6 @@
 import csv
 import os
-from abc import ABC, abstractclassmethod
+from abc import ABC, abstractmethod
 from datetime import datetime
 
 import pytz
@@ -95,8 +95,9 @@ class Conta_corrente(Conta):
 
 class Transacao(ABC):
 
-    @abstractclassmethod
-    def registrar(self, conta):
+    @classmethod
+    @abstractmethod
+    def registrar(cls, conta):
         pass
 
 
@@ -318,25 +319,35 @@ def exibir_extrato(clientes):
     print("==========================================")
 
 
-def criar_cliente(clientes):
-    cpf = int(input("Informe o CPF (somente número): "))
-    cliente = filtrar_cliente(cpf, clientes)
-
-    if cliente:
-        print("\nErro: Já existe cliente com esse CPF!")
-        return 0
-
-    nome = input("Informe o nome completo: ")
-    data_nascimento = input("Informe a data de nascimento (dd-mm-aaaa): ")
-    endereco = input(
-        "Informe o endereço (logradouro, nro - bairro - cidade/sigla estado): "
-    )
-
-    cliente = PessoaFisica(
+def criar_cliente(clientes, base_cliente = None):
+    if base_cliente:
+        cpf = int(base_cliente[0])
+        nome = base_cliente[1]
+        data_nascimento = base_cliente[2]
+        endereco = base_cliente[3]
+        cliente = PessoaFisica(
         nome=nome, data_nascimento=data_nascimento, cpf=cpf, endereco=endereco
-    )
+        )
+        clientes.append(cliente)
+    else:
+        cpf = int(input("Informe o CPF (somente número): "))
+        cliente = filtrar_cliente(cpf, clientes)
 
-    clientes.append(cliente)
+        if cliente:
+            print("\nErro: Já existe cliente com esse CPF!")
+            return 0
+
+        nome = input("Informe o nome completo: ")
+        data_nascimento = input("Informe a data de nascimento (dd-mm-aaaa): ")
+        endereco = input(
+            "Informe o endereço (logradouro, nro - bairro - cidade/sigla estado): "
+        )
+
+        cliente = PessoaFisica(
+            nome=nome, data_nascimento=data_nascimento, cpf=cpf, endereco=endereco
+        )
+
+        clientes.append(cliente)
 
 
 def criar_conta(numero_conta, clientes, contas_corrente):
@@ -374,9 +385,12 @@ def listar_transacoes(cliente, op=0):
 
 
 def main():
-
     clientes = []
     contas_corrente = []
+    with open("clientes.txt", "r", encoding = "UTF-8") as arquivo:
+        clientes_salvo = arquivo.readlines()
+        clientes_salvo = [cont.strip() for cont in clientes_salvo]
+        criar_cliente(clientes, clientes_salvo)
 
     while True:
         opcao = menu()
