@@ -7,3 +7,6 @@ V1.1: as operações passaram a ser computadas dentro de funções, proporcionan
 V1.2: Foram adicionadas funcões de cadastro de usuário e criação de contas corrente.
 
 v1.3: Refatoração do código, colocando-o de acordo com os conceitos de POO.
+
+Nota: foi criado um arquivo 'clientes.txt' para "popular" o sistema inicialmente, evitando
+a necessidade de de criar um usuário novo toda vez que for testar alguma implementação nova.
