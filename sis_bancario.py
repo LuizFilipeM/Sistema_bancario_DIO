@@ -373,13 +373,13 @@ def gerador_transacoes(cliente, op):
     historico = cliente.list[0].historico
 
     for i in historico.transacoes:
-        if op == "0":
+        if not op:
             yield i
         elif i["tipo"] == op:
             yield i
 
 
-def listar_transacoes(cliente, op=0):
+def listar_transacoes(cliente, op="0"):
     for i in gerador_transacoes(cliente, op):
         print(f"\n{i['data']}: {i['tipo']}:\tR$ {i['valor']:.2f}")
 
@@ -415,15 +415,14 @@ def main():
             listar_contas(contas_corrente)
 
         elif opcao == "lt":
-            op = int(
-                input(
+            op = input(
                     """
     Para saques digite 'Saque'
     Para depósitos digite 'Deposito'
-    Para todas as transacoes Digite '0'
+    Para todas as transacoes pressione 'enter'
                        """
                 )
-            )
+    
             listar_transacoes(clientes[0], op)
 
         elif opcao == "l":
